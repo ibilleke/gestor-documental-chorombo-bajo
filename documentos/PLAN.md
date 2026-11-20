@@ -45,8 +45,8 @@ Toda instalación de esta fase y de las siguientes se rige por `CLAUDE.md`: se c
 - [ ] Instalar **MySQL Community Server 8.4 LTS**.
 - [ ] Instalar **Node.js LTS** (requisito de pnpm y Vite).
 - [ ] Instalar **pnpm** como gestor de paquetes de JavaScript, previa lectura de su documentación oficial y aprobación (sección 5).
-- [x] Instalar Git 2.56.1 e inicializar el repositorio local en `gestor-documental/`, rama `main`, con un primer commit (20-11-2026).
-- [ ] Crear el repositorio remoto (GitHub privado o similar) y subir el proyecto.
+- [x] Instalar Git 2.56.1 e inicializar el repositorio local en `gestor-documental/`, rama `main` (20-11-2026).
+- [x] Crear el repositorio remoto privado en GitHub (`ibilleke/gestor-documental-chorombo-bajo`) y subir el proyecto, tras revisar dos veces que no contenga variables de entorno ni datos sensibles (20-11-2026).
 - [x] Crear el proyecto con la **última versión estable de Laravel** (20-11-2026): Laravel Framework 13.43.0 (esqueleto `laravel/laravel` 13.x) sobre PHP 8.5.12, sin kit de inicio, con PHPUnit y `.env` configurado para MySQL (`gestor_documental`). Registrar versiones en el BRIEF.
 - [ ] Crear la base de datos `gestor_documental` en MySQL y configurar `.env`.
 - [ ] Configurar idioma `es`, zona horaria `America/Santiago` y formato de fecha chileno.
