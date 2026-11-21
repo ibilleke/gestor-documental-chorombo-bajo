@@ -2,6 +2,8 @@
 
 Plataforma web de gestión documental para el equipo directivo de la **Escuela Básica G733 Chorombo Bajo** (María Pinto). Permite registrar, consultar y resguardar de forma ordenada los documentos que hoy se administran en papel: memos, oficios, permisos administrativos, citaciones y acuerdos con apoderados, y documentos de reuniones comunales.
 
+Además, se contempla un acceso acotado para docentes y un portal en el que cada apoderado consulta solo la información de sus propios pupilos (en validación con la dirección del establecimiento).
+
 Proyecto desarrollado en el marco de la asignatura Clínicas Tecnológicas del Instituto Profesional San Sebastián.
 
 > **Estado:** Fase 0 (preparación del entorno). El repositorio contiene el esqueleto base de Laravel y la documentación del proyecto; los módulos aún no están implementados.
@@ -10,7 +12,7 @@ Proyecto desarrollado en el marco de la asignatura Clínicas Tecnológicas del I
 
 | Historia de usuario | Módulo |
 |---|---|
-| HU-01 | Perfiles y permisos por rol |
+| HU-01 | Usuarios, roles configurables y permisos |
 | HU-02 | Correspondencia (memos y oficios) |
 | HU-03 | Permisos administrativos |
 | HU-04 | Citaciones |
@@ -18,6 +20,7 @@ Proyecto desarrollado en el marco de la asignatura Clínicas Tecnológicas del I
 | HU-06 | Reuniones comunales |
 | HU-07 | Buscador |
 | HU-08 | Bitácora y papelera |
+| HU-09 | Portal de apoderados (en validación) |
 
 El detalle de cada historia, sus criterios de aceptación y las reglas de negocio está en [documentos/BRIEF.md](documentos/BRIEF.md).
 
@@ -82,7 +85,7 @@ El detalle de cada historia, sus criterios de aceptación y las reglas de negoci
 php artisan test
 ```
 
-Cada funcionalidad incluye pruebas automáticas asociadas a los criterios de aceptación de su historia de usuario.
+Cada funcionalidad incluye pruebas unitarias (`tests/Unit`) y de funcionalidad (`tests/Feature`) asociadas a los criterios de aceptación de su historia de usuario. Las pruebas usarán una base de datos MySQL separada, `gestor_documental_test`, y nunca la base de desarrollo (configuración pendiente hasta instalar MySQL).
 
 ## Documentación
 
@@ -96,6 +99,7 @@ Cada funcionalidad incluye pruebas automáticas asociadas a los criterios de ace
 
 - Durante el desarrollo se utilizan **exclusivamente datos ficticios**. No se cargan datos reales de estudiantes, apoderados ni funcionarios.
 - El archivo `.env` y cualquier credencial quedan fuera del repositorio.
+- El acceso se controla por roles y permisos (RBAC) con las funciones nativas de Laravel: todo lo que no está autorizado se niega. Los roles delicados solo se asignan con aprobación de Dirección, y un apoderado solo accede a la información de sus propios pupilos.
 - Los archivos adjuntos se almacenan en un disco privado y solo se entregan a través de un controlador que verifica los permisos del usuario.
 - Toda acción sobre un documento queda registrada en la bitácora, y la eliminación es lógica, con posibilidad de restauración.
 - La información de estudiantes y apoderados se trata como sensible, conforme a la Ley 19.628 y la Ley 21.719.
