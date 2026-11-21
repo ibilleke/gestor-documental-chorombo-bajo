@@ -82,7 +82,7 @@ Los colores se definen como tema en `tailwind.config` (o en el CSS del tema, seg
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │ Barra superior: nombre del sistema · buscador rápido ·       │
-│ alerta de pendientes · usuario y rol · cerrar sesión         │
+│ alerta de pendientes · usuario y roles · cerrar sesión       │
 ├──────────────┬───────────────────────────────────────────────┤
 │ Menú lateral │ Migas de pan (Inicio › Correspondencia › ...) │
 │ (según rol)  │ Título de la página + botón principal         │
@@ -110,8 +110,10 @@ Según la matriz preliminar del BRIEF §5 **[A validar: puede cambiar con los ca
 | Reuniones comunales | ✔ | ✔ | ✔ | ✔ | ✔ |
 | Bitácora | ✔ | ✔ | — | — | — |
 | Papelera | — | ✔ | — | — | — |
-| Usuarios y roles | — | ✔ | — | — | — |
+| Usuarios y roles | ✔ (asigna y aprueba roles) | ✔ (solicita roles) | — | — | — |
 | Funcionarios / Estudiantes / Apoderados | **[A validar: quién los administra]** | | | | |
+
+Un usuario con varios roles ve la suma de las opciones de todos ellos, en un solo menú (sin cambiar de rol).
 
 "Solicita" significa que el rol puede cargar una solicitud de permiso. Si podrá ver el estado de sus propias solicitudes está pendiente **[A validar]**.
 
@@ -124,14 +126,15 @@ Según la matriz preliminar del BRIEF §5 **[A validar: puede cambiar con los ca
 
 ### 5.2 Inicio (panel)
 Tarjetas según el rol:
-- **Dirección / Administración:** permisos pendientes de V°B° (con número) y últimos documentos cargados (solo los que el rol puede ver; para Administración, permisos y reuniones).
+- **Dirección:** además, solicitudes de rol pendientes de aprobación (con número y acceso directo a "Aprobar"/"Rechazar").
+- **Dirección / Administración:** permisos pendientes de V°B° (con número) y últimos documentos cargados (solo los que el usuario puede ver; para Administración, permisos y reuniones).
 - **Secretaría:** próximo folio disponible de memo y de oficio, citaciones programadas para esta semana.
 - **Convivencia:** citaciones programadas, últimos acuerdos.
 - **UTP:** compromisos de reuniones comunales próximos a vencer.
-- Todos: botones grandes "Registrar documento" para los tipos que su rol puede cargar, y "Buscar documento".
+- Todos: botones grandes "Registrar documento" para los tipos que sus roles pueden cargar, y "Buscar documento".
 
 ### 5.3 Listado de un módulo (patrón común)
-- Título + botón principal ("Registrar memo u oficio", "Registrar citación", etc.), visible solo si el rol puede cargar.
+- Título + botón principal ("Registrar memo u oficio", "Registrar citación", etc.), visible solo si el usuario puede cargar ese tipo.
 - Filtros arriba de la tabla (fecha desde/hasta, estado y los propios del módulo) y un botón "Limpiar filtros". Los filtros secundarios quedan agrupados en "Más filtros" para mantener la pantalla despejada.
 - Tabla con: fecha, título o asunto, datos clave del módulo, estado (insignia de color) y solo dos acciones: **Ver** y **Descargar**. Editar y Eliminar están dentro del detalle, para evitar errores por un clic accidental.
 - Paginación de 20 filas.
@@ -140,6 +143,7 @@ Tarjetas según el rol:
 ### 5.4 Formulario de carga (patrón común)
 - Tres pasos numerados (ver "Punto de partida"): datos del documento, personas asociadas y archivo. Se puede volver al paso anterior sin perder lo escrito. Si el tipo de documento no tiene personas asociadas (por ejemplo, una minuta de reunión), el formulario tiene solo dos pasos.
 - Campos obligatorios marcados con `*` y con la palabra "(obligatorio)".
+- Rol emisor: si el usuario tiene más de un rol habilitado para cargar ese tipo de documento, el paso 1 incluye el campo obligatorio "Emitido como" con esos roles. Si tiene uno solo, el campo no se muestra y se asigna automáticamente.
 - Archivo: botón grande "Elegir archivo" (arrastrar es opcional, no la única forma), con el texto "PDF o Word, máximo 15 MB" y el nombre y tamaño del archivo elegido antes de enviarlo. Si se aceptan presentaciones en Reuniones comunales, el texto cambia en ese módulo **[A validar]**.
 - Errores junto a cada campo, en rojo, y un resumen al inicio del formulario.
 - Botones: "Guardar" (primario) y "Cancelar" (secundario).
@@ -148,7 +152,7 @@ Tarjetas según el rol:
 - Datos del documento, estado, quién lo registró y cuándo.
 - Botones "Editar" y "Eliminar" aquí (no en la tabla), según los permisos.
 - Botón "Descargar" (cada descarga queda en la bitácora; no hace falta avisarlo al usuario).
-- Historial del documento (extracto de la bitácora) visible para Dirección y Administración, solo en documentos que el rol puede abrir.
+- Historial del documento (extracto de la bitácora) visible para Dirección y Administración, solo en documentos que el usuario puede abrir.
 
 ### 5.6 Pantallas por módulo
 
@@ -159,10 +163,11 @@ Tarjetas según el rol:
 | **Citaciones** (HU-04) | Estudiante (búsqueda por nombre o RUN), apoderado (se completa a partir del estudiante), motivo (Conductual, Pedagógico, Administrativo), fecha y hora. El estado (Asistió, No asistió, etc.) se actualiza desde el detalle de la citación, con un selector y confirmación, igual que las demás ediciones. |
 | **Acuerdos** (HU-05) | Franja roja "CONFIDENCIAL" arriba de la pantalla. Búsqueda por nombre o RUN del estudiante. Ámbito y fecha de firma. |
 | **Reuniones comunales** (HU-06) | Tipo de red, fecha y documento. Lista de compromisos con fecha límite y estado; los vencidos en rojo y los que vencen en menos de 7 días en dorado (plazo propuesto por el equipo). |
-| **Buscador** (HU-07) | Barra de texto + filtros: tipo, rango de fechas, rol emisor, estado, remitente y estudiante. Resultados de todos los tipos en una sola tabla con una insignia del tipo. Solo muestra lo que el rol puede abrir. |
+| **Buscador** (HU-07) | Barra de texto + filtros: tipo, rango de fechas, rol emisor, estado, remitente y estudiante. Resultados de todos los tipos en una sola tabla con una insignia del tipo. Solo muestra lo que el usuario puede abrir. |
 | **Bitácora** (HU-08) | Tabla de solo lectura: fecha y hora, usuario, acción y documento. Filtros por usuario, acción y fechas. Para Administración, los documentos confidenciales aparecen como "Documento confidencial #ID", sin título, porque el título puede incluir el nombre de un estudiante **[A validar]**. |
 | **Papelera** (HU-08) | Documentos eliminados, quién y cuándo los eliminó. Botón "Restaurar" con confirmación. Administración puede restaurar los confidenciales, pero no abrirlos ni descargarlos; se muestran igual que en la bitácora **[A validar]**. |
-| **Usuarios** (HU-01) | Tabla de usuarios con rol y estado. Formulario de alta y edición. Botón "Activar/Desactivar" (no se borran usuarios). |
+| **Usuarios** (HU-01) | Tabla de usuarios con sus roles y estado. Formulario de alta y edición, con casillas para asignar uno o más roles (al menos uno es obligatorio; si falta, se muestra "Seleccione al menos un rol."). Botón "Activar/Desactivar" (no se borran usuarios). Cuando Administración asigna o retira un rol, la pantalla muestra "Solicitud enviada a Dirección" y el rol aparece como "Pendiente de aprobación". |
+| **Solicitudes de rol** (HU-01, solo Dirección) | Aviso con el número de solicitudes pendientes en la barra superior y en el panel de inicio, y una lista con usuario, rol, acción y quién solicita, con botones "Aprobar" y "Rechazar" (con confirmación). Debe resolverse en pocos clics **[Diseño detallado pendiente]**. |
 
 ## 6. Componentes reutilizables (Blade)
 

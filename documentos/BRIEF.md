@@ -61,13 +61,29 @@ Desarrollar una plataforma web que centralice la documentación del equipo direc
 
 | Rol | Responsabilidad | Permisos principales |
 |---|---|---|
-| **Dirección** | Supervisión transversal y aprobación institucional | Carga, lectura, descarga, aprobación y supervisión de **todos** los módulos. Aprueba/rechaza permisos administrativos. |
-| **Administración** | Gestión operativa y técnica de la plataforma | Crea usuarios y asigna roles, configuración, respaldos, papelera/auditoría. Gestiona permisos administrativos. |
+| **Dirección** | Supervisión transversal y aprobación institucional (directora y subdirector) | Carga, lectura, descarga, aprobación y supervisión de **todos** los módulos. Aprueba/rechaza permisos administrativos. **Asigna y retira roles** y aprueba o rechaza las solicitudes de asignación. |
+| **Administración** | Gestión operativa y técnica de la plataforma | Crea, edita y desactiva usuarios y **solicita** la asignación o el retiro de roles (requiere aprobación de Dirección), configuración, respaldos, papelera/auditoría. Gestiona permisos administrativos. |
 | **Secretaría** | Correspondencia oficial y citaciones | Carga, edición y foliación de memos, oficios y citaciones. |
 | **Jefatura de UTP** | Gestión técnico-pedagógica | Documentos pedagógicos, reuniones comunales técnicas, memos/oficios generales. |
 | **Convivencia Escolar** | Casos de convivencia y apoderados | Carga y lectura de acuerdos con apoderados, citaciones y casos de convivencia (confidencial). |
 
 Fuera del alcance como usuarios: apoderados, estudiantes y docentes que no integran el equipo directivo.
+
+**Modelo de control de acceso (decidido el 21-11-2026):**
+- **Un usuario puede tener uno o más roles**, porque en una escuela pequeña es probable que una misma persona cumpla varias funciones (por ejemplo, UTP y Convivencia). Sus permisos son la **suma** de los permisos de todos sus roles.
+- Los roles agrupan **permisos con nombre** (por ejemplo, `correspondencia.crear`, `acuerdos.ver`, `permisos.aprobar`). El código verifica siempre el permiso y nunca el nombre del rol, de modo que crear o renombrar roles (por ejemplo, Inspectoría General) no requiere cambiar el código.
+- Además del rol, las Policies revisan condiciones del documento: confidencialidad, autor y eliminación.
+- Se niega todo acceso que no esté autorizado de forma explícita; ningún rol tiene acceso total por excepción.
+- Se implementa con funciones nativas de Laravel (Gates, Policies, Eloquent), sin paquetes externos.
+- **Asignación de roles con aprobación de Dirección (decidido el 21-11-2026)**, para evitar que alguien se otorgue accesos a sí mismo:
+  - El subdirector recibe el rol **Dirección**, con los mismos permisos que la directora (incluido el acceso a documentos confidenciales).
+  - Solo quien tiene el permiso `roles.asignar` (Dirección) asigna o retira roles de forma directa.
+  - Quien tiene el permiso `roles.solicitar` (Administración y, si se define, otra persona con rango, como Recursos Humanos **[A validar]**) solo puede **solicitar** una asignación o un retiro. El cambio se aplica cuando Dirección lo aprueba.
+  - Nadie aprueba su propia solicitud, ni una solicitud que lo beneficie a sí mismo.
+  - Un usuario creado por Administración queda **inactivo** hasta que Dirección apruebe su primer rol, y no puede activarse antes; así se cumple que todo usuario activo tenga al menos un rol.
+  - No se puede retirar el rol Dirección ni desactivar al último usuario activo con ese rol, para que la plataforma nunca quede sin nadie que apruebe.
+  - Cada solicitud, aprobación, rechazo, asignación y retiro de rol queda en la bitácora.
+  - La aprobación debe ser rápida y simple para Dirección (aviso de pendientes y botones Aprobar/Rechazar), sin perder seguridad. Su diseño detallado se define más adelante (DESIGN §5).
 
 Nota: los "documentos pedagógicos" de UTP y los "casos de convivencia" vienen de la ficha, pero no están entre los 6 tipos de documento del alcance. Si se incluyen, falta definirlo **[A validar]** (relacionado con la pregunta 4 de la sección 15).
 
@@ -80,7 +96,7 @@ Es una propuesta del equipo (Avance 1, probada en la simulación), no una defini
 | Rol | Puede cargar | Puede consultar |
 |---|---|---|
 | Dirección | Todos los tipos | Todos los tipos, incluidos los confidenciales |
-| Administración | Permisos administrativos (además gestiona usuarios, roles, configuración y respaldos) | Permisos, reuniones comunales y papelera |
+| Administración | Permisos administrativos (además gestiona usuarios, solicita asignaciones de rol, configuración y respaldos) | Permisos, reuniones comunales y papelera |
 | Secretaría | Memos, oficios, citaciones y permisos | Memos, oficios, citaciones y reuniones comunales |
 | Jefatura de UTP | Reuniones comunales y permisos | Memos, oficios y reuniones comunales |
 | Convivencia Escolar | Citaciones, acuerdos y permisos | Citaciones, acuerdos (confidenciales) y reuniones comunales |
@@ -124,7 +140,11 @@ La prioridad viene de la matriz de necesidades del Avance 1, actualizada despué
 ### Detalle de criterios por HU
 
 **HU-01 — Perfiles y permisos**
-- Crear usuarios y asociarlos a uno de los 5 roles.
+- Crear usuarios y asignarles uno o más de los 5 roles.
+- Un usuario con varios roles accede a la suma de los módulos y acciones de sus roles.
+- Un usuario desactivado no puede iniciar sesión.
+- Todo usuario debe tener al menos un rol: el formulario de alta y edición no se guarda sin un rol seleccionado (decidido el 21-11-2026).
+- Dirección asigna y retira roles directamente; Administración solo los solicita y el cambio se aplica cuando Dirección lo aprueba (ver §5).
 - Permisos según la tabla de la sección 5.
 
 **HU-02 — Memos y oficios**
@@ -164,6 +184,7 @@ La prioridad viene de la matriz de necesidades del Avance 1, actualizada despué
 - La historia también pide buscar por remitente y por estudiante (nombre o RUN).
 - Entrevista: se confirmó la búsqueda por **fecha, tema o referencia**.
 - Los resultados respetan la matriz de roles: nadie ve en el buscador documentos que no puede abrir.
+- Filtro "rol emisor" (decidido el 21-11-2026): cada documento guarda el rol con que se emitió. Si quien lo registra tiene un solo rol habilitado para cargar ese tipo, se asigna automáticamente; si tiene varios, el formulario le pide elegir con cuál lo emite. El rol emisor no cambia aunque la persona deje ese rol después.
 
 **HU-08 — Bitácora**
 - Registro automático de: usuario, acción (subir, editar, descargar, eliminar), documento y fecha/hora. El diagrama de flujo agrega también los accesos denegados.
@@ -183,7 +204,7 @@ La prioridad viene de la matriz de necesidades del Avance 1, actualizada despué
 
 ## 9. Flujo principal (registro y consulta de un documento)
 
-1. **Acceso**: el usuario inicia sesión → se cargan su rol y módulos permitidos → elige tipo de documento → si el rol no puede cargar ese tipo: acceso denegado + bitácora.
+1. **Acceso**: el usuario inicia sesión → se cargan sus roles, sus permisos y los módulos permitidos → elige tipo de documento → si ninguno de sus roles puede cargar ese tipo: acceso denegado + bitácora.
 2. **Validación**: completa metadatos y adjunta archivo → valida formato/tamaño → si es memo u oficio, valida folio duplicado → define visibilidad (confidencial o según matriz de roles).
 3. **Registro**: guarda e indexa → registra en bitácora → si es permiso administrativo, queda pendiente de V°B° y alerta a Dirección/Administración → Dirección aprueba o rechaza (supuesto **[A validar]**) → queda disponible en el buscador.
 
@@ -195,10 +216,14 @@ Entidades del MER (`mer.html`, carpeta `Evidencias técnicas/`, fuera del reposi
 
 | Entidad | Propósito |
 |---|---|
-| `roles` | Los 5 roles del sistema |
-| `usuarios` | Integrantes del equipo directivo (rol, email único, contraseña hasheada, activo). Propuesta: usar la tabla `users` de Laravel con estos campos (ver PLAN §5) |
-| `documentos` | Tabla base: tipo, título, fecha, ruta del archivo, tamaño, confidencial, eliminado_en |
-| `bitacoras` | Usuario, documento, acción, fecha/hora |
+| `roles` | Los 5 roles del sistema (nombres editables) |
+| `permisos` | Acciones con nombre, por ejemplo `correspondencia.crear` |
+| `permiso_rol` | Permisos asignados a cada rol (muchos a muchos) |
+| `users` | Integrantes del equipo directivo (email único, contraseña hasheada, activo). Decidido el 21-11-2026: se usa la tabla `users` de Laravel en lugar de `usuarios` del MER (ver PLAN §5) |
+| `rol_user` | Roles asignados a cada usuario (muchos a muchos: un usuario puede tener varios roles) |
+| `solicitudes_rol` | Solicitudes de asignación o retiro de rol: usuario afectado, rol, acción, quién solicita, estado (`Pendiente`, `Aprobada`, `Rechazada`), quién resuelve y fechas |
+| `documentos` | Tabla base: tipo, título, fecha, ruta del archivo, tamaño, confidencial, usuario que lo registró, rol emisor, eliminado_en |
+| `bitacoras` | Usuario, acción, fecha/hora y el registro afectado: un documento o, en la gestión de usuarios y roles, el usuario y el rol involucrados (por eso el documento es opcional) |
 | `correspondencias` | Detalle de memo/oficio (1:1 con documento). Único: clase + folio + año escolar |
 | `funcionarios` | Personal que solicita permisos (RUN único) |
 | `permisos_administrativos` | Funcionario, fechas, días, estado |
@@ -265,7 +290,7 @@ Ya respondidas en la entrevista: cómo se guardan hoy los documentos (archivador
 
 **Prioritarias (afectan el diseño de roles y de los primeros módulos):**
 
-1. ¿Cómo se relacionan Inspectoría General y Coordinación Académica con los perfiles Administración y UTP? ¿Qué puede ver y hacer cada cargo?
+1. ¿Cómo se relacionan Inspectoría General y Coordinación Académica con los perfiles Administración y UTP? ¿Qué puede ver y hacer cada cargo? ¿Qué personas cumplen más de una función (la plataforma ya permite asignarles varios roles)? ¿Quién, además de Administración, puede solicitar asignaciones de rol (por ejemplo, Recursos Humanos)?
 2. ¿Quién otorga el V°B° de los permisos? ¿Solo se registran permisos ya autorizados o también se solicitan y aprueban en la plataforma? ¿El solicitante ve el estado de su solicitud?
 3. ¿Cómo funciona la reserva de números de oficio?
 4. Convivencia Escolar: ¿qué contienen los expedientes, entrevistas y protocolos, quién los consulta y basta HU-05 para cubrirlos?
@@ -293,6 +318,6 @@ El detalle por fases, el cronograma, los riesgos y las decisiones técnicas est�
 
 1. Crear el proyecto Laravel y configurar la conexión a MySQL.
 2. Implementar migraciones y seeders según el modelo de datos (roles y usuarios de prueba).
-3. Implementar autenticación y middleware de roles (HU-01).
+3. Implementar autenticación, roles y permisos con Gates y Policies (HU-01).
 4. Desarrollar los módulos por prioridad: Correspondencia (HU-02) y Permisos (HU-03) → Acuerdos/Convivencia (HU-05) → Citaciones (HU-04) → Reuniones (HU-06) → Buscador y Bitácora (HU-07, HU-08).
 5. Pruebas con datos ficticios y validación con la directora.

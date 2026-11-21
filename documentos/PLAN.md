@@ -69,19 +69,20 @@ Ya se hizo una entrevista (resultados en el Avance 1 del 08-11-2026 y en el BRIE
 
 ### Fase 2 — Base del sistema (semana 2) · HU-01
 
-- [ ] Migraciones en este orden: `roles` → `users` (o `usuarios`, según la decisión de la sección 5) → `funcionarios` → `apoderados` → `estudiantes` → `documentos` → `correspondencias` → `permisos_administrativos` → `citaciones` → `acuerdos_apoderados` → `reuniones_comunales` → `compromisos` → `bitacoras`.
+- [ ] Migraciones en este orden: `roles` → `permisos` → `permiso_rol` → `users` (columna `activo`) → `rol_user` → `solicitudes_rol` → `funcionarios` → `apoderados` → `estudiantes` → `documentos` → `correspondencias` → `permisos_administrativos` → `citaciones` → `acuerdos_apoderados` → `reuniones_comunales` → `compromisos` → `bitacoras`.
 - [ ] Restricción única en `correspondencias`: (`clase`, `folio`, `anio_escolar`).
 - [ ] Modelos Eloquent con sus relaciones según el MER.
-- [ ] Seeders: 5 roles (con nombres editables, porque pueden cambiar a los cargos reales), 1 usuario de prueba por rol y datos **ficticios** de funcionarios, apoderados y estudiantes.
+- [ ] Seeders: 5 roles (con nombres editables, porque pueden cambiar a los cargos reales), los permisos de la matriz y su asignación a cada rol, 1 usuario de prueba por rol, 1 usuario de prueba con dos roles y datos **ficticios** de funcionarios, apoderados y estudiantes.
 - [ ] Inicio y cierre de sesión, y bloqueo de usuarios inactivos.
-- [ ] Middleware de rol y `Policies` de Laravel por módulo.
-- [ ] Documento `documentos/MATRIZ_PERMISOS.md`: rol × módulo × acción (ver, crear, editar, descargar, eliminar, aprobar). Partir de la matriz preliminar del BRIEF §5 (la misma de `simulacion.html`) y ajustarla con las respuestas de la directora.
-- [ ] Gestión de usuarios (solo Administración): crear, editar, asignar rol, activar o desactivar.
+- [ ] Método `User::tienePermiso()` (suma de los permisos de todos los roles del usuario, guardada en caché durante la solicitud), Gates que lo consultan y `Policies` de Laravel por módulo. Las rutas se protegen con el middleware nativo `can`; no se crea un middleware de rol.
+- [ ] Documento `documentos/MATRIZ_PERMISOS.md`: rol × módulo × acción (ver, crear, editar, descargar, eliminar, aprobar), con el nombre de cada permiso en formato `modulo.accion` (por ejemplo, `correspondencia.crear`). Partir de la matriz preliminar del BRIEF §5 (la misma de `simulacion.html`) y ajustarla con las respuestas de la directora.
+- [ ] Gestión de usuarios (Administración y Dirección): crear, editar, activar o desactivar, con uno o más roles (mínimo uno, validado con un Form Request).
+- [ ] Asignación de roles con aprobación (BRIEF §5): Dirección asigna y retira roles directamente; Administración genera una solicitud en `solicitudes_rol` que se aplica solo cuando Dirección la aprueba. Un usuario nuevo creado por Administración queda inactivo hasta esa aprobación y no puede activarse antes. Nadie resuelve su propia solicitud. No se puede retirar el rol Dirección ni desactivar al último usuario activo con ese rol. Todo queda en la bitácora. El diseño de la pantalla de aprobación rápida se define antes de implementarla (DESIGN §5).
 - [ ] Menú y panel de inicio que muestran solo los módulos permitidos para cada rol.
 - [x] Bocetos de las pantallas principales (DESIGN.md §8), elaborados el 18-11-2026 (carpeta `Bocetos/`, fuera del repositorio).
 - [ ] Validar los bocetos con la directora y al menos dos futuros usuarios.
 
-**Criterio de término:** cada uno de los 5 usuarios de prueba entra y ve solo sus módulos; un rol sin permiso que intenta entrar por URL recibe un error 403.
+**Criterio de término:** cada uno de los 5 usuarios de prueba entra y ve solo sus módulos; el usuario con dos roles ve la suma de los módulos de ambos; un rol sin permiso que intenta entrar por URL recibe un error 403; un usuario inactivo no puede iniciar sesión; un rol solicitado por Administración no se aplica hasta que Dirección lo aprueba.
 
 ### Fase 3 — Núcleo documental (semana 3)
 
@@ -127,10 +128,14 @@ Cada módulo incluye listado, formulario de carga, detalle, edición, descarga y
 
 ### Fase 6 — Pruebas y validación (semana 8)
 
-- [ ] Pruebas automáticas (PHPUnit o Pest, incluidos en Laravel), al menos una por criterio de aceptación.
+- [ ] Revisión final de las pruebas automáticas (PHPUnit). Las pruebas se escriben en cada fase junto con su funcionalidad (regla 12 de `CLAUDE.md`); aquí se verifica que exista al menos una por criterio de aceptación y que toda la suite pase.
 - [ ] Reutilizar como casos de prueba las reglas de negocio de `simulacion.html` (carpeta `Evidencias técnicas/`, fuera del repositorio).
 - [ ] Pruebas de seguridad:
   - Acceso por URL directa sin permiso.
+  - Escalamiento de privilegios: un usuario que intenta asignarse roles o permisos que no le corresponden, aplicar un rol sin aprobación de Dirección, aprobar su propia solicitud o activar un usuario sin rol aprobado.
+  - Último usuario de Dirección: no se le puede retirar el rol ni desactivar.
+  - Usuario desactivado: no inicia sesión.
+  - Usuario sin roles: el formulario lo rechaza; si existiera por otra vía (por ejemplo, directo en la base de datos), no accede a ningún módulo.
   - Descarga de archivos ajenos.
   - Subida de archivos con extensión falsa.
   - Protección CSRF.
@@ -163,19 +168,19 @@ Cada módulo incluye listado, formulario de carga, detalle, edición, descarga y
 
 ```
 app/
-  Models/            Rol, User, Documento, Correspondencia, PermisoAdministrativo,
+  Models/            Rol, Permiso, User, Documento, Correspondencia, PermisoAdministrativo,
                      Funcionario, Estudiante, Apoderado, Citacion, AcuerdoApoderado,
                      ReunionComunal, Compromiso, Bitacora
   Policies/          Una Policy por módulo (reglas de la matriz de permisos)
   Http/Controllers/  Un controlador por módulo + DescargaController + BuscadorController
   Http/Requests/     Validaciones de formularios (archivo, folio, RUN, fechas)
-  Http/Middleware/   VerificarRol
   Services/          ArchivoService, BitacoraService, FolioService
 database/
   migrations/  seeders/  factories/
 resources/views/     Vistas Blade por módulo + layout base
-routes/web.php       Rutas agrupadas por módulo con middleware de rol
-tests/Feature/       Pruebas por HU
+routes/web.php       Rutas agrupadas por módulo, protegidas con el middleware nativo `can`
+tests/Unit/          Pruebas de lógica aislada (permisos, reglas de negocio)
+tests/Feature/       Pruebas por HU (rutas, permisos por rol, bitácora, archivos)
 ```
 
 ## 5. Decisiones técnicas a tomar en la Fase 0
@@ -183,12 +188,13 @@ tests/Feature/       Pruebas por HU
 | Decisión | Opciones | Recomendación |
 |---|---|---|
 | Entorno local | (a) Laravel Herd gratuito + MySQL Community Server + Git; (b) `php.new` (Herd Lite) + MySQL Community Server + Node.js LTS + Git; (c) XAMPP; (d) Laragon | Opciones válidas: **(a)** y **(b)**, ambas de la [documentación oficial de Laravel 13](https://laravel.com/docs/installation) y gratuitas. Herd gratuito incluye PHP, Composer, Laravel y Node, pero **no MySQL** (solo en Herd Pro, de pago), así que MySQL se instala aparte. **Descartadas:** XAMPP (trae MariaDB, no MySQL) y Laragon 7 o superior (ya no es completamente gratuito, [laragon.org/docs/faq](https://laragon.org/docs/faq)). Revisado el 18-11-2026. ~~Decidido (18-11-2026): opción (a)~~. **Cambio de decisión (20-11-2026): instalación manual** de PHP 8.5.12 (zip oficial de php.net) y Composer 2.11.2 (`composer.phar` oficial), sin Herd: no requiere permisos de administrador, no instala servicios ni modifica archivos del sistema, y se desinstala borrando una carpeta. Se completa con MySQL Community Server 8.4 LTS, Node.js LTS, pnpm y Git, cada uno con su aprobación. No se usó PHP 8.6.0 (publicado el 19-11-2026) por estar fuera de la política de soporte de Laravel 13 |
-| Tabla de usuarios | `users` (Laravel) / `usuarios` (MER) | **`users`** con `rol_id` y `activo` agregados: mantiene la compatibilidad con la autenticación nativa de Laravel. Actualizar el MER y el BRIEF |
+| Tabla de usuarios | `users` (Laravel) / `usuarios` (MER) | **Decidido (21-11-2026): `users`** con la columna `activo` agregada y los roles en la tabla `rol_user`. Mantiene la compatibilidad con la autenticación nativa de Laravel (proveedor, restablecimiento de contraseñas y sesiones), según la [documentación de autenticación](https://laravel.com/docs/13.x/authentication). BRIEF actualizado; falta actualizar el MER |
 | Autenticación | Kit de inicio oficial de Laravel / inicio de sesión propio | Inicio de sesión propio y simple con el `Auth` de Laravel si el kit incluye más de lo necesario |
 | Frontend | Blade + Tailwind (Vite) / Blade + Bootstrap | **Blade + Tailwind**: forma parte de la configuración inicial de Laravel (confirmar en la documentación de la versión instalada). Requiere Node y la instalación de dependencias de JavaScript con pnpm, sujeta a aprobación |
 | Gestor de paquetes de JavaScript | npm (incluido con Node) / pnpm | **Decidido (18-11-2026): pnpm.** Se usa en lugar de npm para instalar las dependencias del frontend y ejecutar Vite (`pnpm install`, `pnpm run dev`, `pnpm run build`). Su instalación se rige por las reglas 2 y 3 de `CLAUDE.md`: antes de instalarlo se lee la [documentación oficial de pnpm](https://pnpm.io/installation) y se confirma el método compatible con la versión de Node.js LTS que se instale. Se versiona `pnpm-lock.yaml` y no se versiona `package-lock.json` |
-| Roles | Tabla propia + Policies / paquete externo | **Tabla propia + Policies**: son pocos roles (5, con nombres editables) |
-| Pruebas | PHPUnit / Pest | La que traiga por defecto la versión de Laravel instalada |
+| Roles | Tabla propia + Policies / paquete externo | **Decidido (21-11-2026): RBAC nativo** con tablas `roles`, `permisos`, `permiso_rol` y `rol_user` (varios roles por usuario), más Policies que revisan condiciones del documento. El código verifica permisos, no roles, y se niega por defecto ([OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html), [Laravel 13: Authorization](https://laravel.com/docs/13.x/authorization)). Se descartó `spatie/laravel-permission` 8.5.0 (compatible con Laravel 13, licencia MIT) porque agrega una dependencia y funciones que no se necesitan; queda como opción si la plataforma llega a atender varias escuelas |
+| Pruebas | PHPUnit / Pest | **PHPUnit** (incluido en el proyecto). **Decidido (21-11-2026):** las pruebas usan una base MySQL separada, `gestor_documental_test`, para comportarse igual que la producción; requiere instalar MySQL 8.4 LTS |
+| Rol emisor de un documento | Guardar el rol con que se registró / derivarlo del usuario | **Decidido (21-11-2026): guardarlo** en `documentos` (columna `rol_id`, junto a `user_id` de quien lo registró). Se asigna solo si el usuario tiene un único rol habilitado para ese tipo; si tiene varios, elige en el formulario. El Form Request valida que el rol elegido pertenezca al usuario y pueda cargar ese tipo |
 
 ## 6. Pendientes de validación y qué bloquean
 
@@ -201,6 +207,7 @@ Ninguno impide empezar: las Fases 0, 2 y 3 se pueden hacer sin respuestas de la 
 | Reserva de números de oficio | Foliación de HU-02 | Antes de la semana 4 |
 | Alcance de Convivencia (expedientes, protocolos) | HU-05 y posibles HU nuevas | Antes de la semana 5 |
 | Quién puede eliminar documentos | Policy de eliminación | Antes de la semana 3 |
+| ¿Quién, además de Administración, puede solicitar asignaciones de rol (por ejemplo, Recursos Humanos)? | Permiso `roles.solicitar` (HU-01) | Antes de terminar la semana 2 (mientras tanto, solo Administración) |
 | Citaciones: solo almacenar o emitir y hacer seguimiento | Alcance de HU-04 | Antes de la semana 5 |
 | ¿Se aceptan `.ppt`/`.pptx`? | Regla de archivos en HU-06 | Antes de la semana 6 |
 | ¿Quién mantiene funcionarios, estudiantes y apoderados? | Mantenedores y permisos (HU-03 a HU-05) | Antes de la semana 4 |
