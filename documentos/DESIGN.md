@@ -110,12 +110,23 @@ Según la matriz preliminar del BRIEF §5 **[A validar: puede cambiar con los ca
 | Reuniones comunales | ✔ | ✔ | ✔ | ✔ | ✔ |
 | Bitácora | ✔ | ✔ | — | — | — |
 | Papelera | — | ✔ | — | — | — |
-| Usuarios y roles | ✔ (asigna y aprueba roles) | ✔ (solicita roles) | — | — | — |
+| Usuarios y roles | ✔ (configura, asigna y aprueba roles) | ✔ (asigna roles no delicados; solicita los delicados) | — | — | — |
 | Funcionarios / Estudiantes / Apoderados | **[A validar: quién los administra]** | | | | |
 
 Un usuario con varios roles ve la suma de las opciones de todos ellos, en un solo menú (sin cambiar de rol).
 
 "Solicita" significa que el rol puede cargar una solicitud de permiso. Si podrá ver el estado de sus propias solicitudes está pendiente **[A validar]**.
+
+**Docente:** mientras la directora no defina sus permisos, solo ve "Inicio" **[A validar]**.
+
+### 4.1 Portal de apoderados (HU-09)
+
+El apoderado no usa el menú del equipo directivo, sino un portal propio, más simple:
+- Diseñado primero para **celular**, porque es probable que muchos apoderados entren desde su teléfono **[A validar]**.
+- Si tiene varios pupilos, al entrar elige a cuál consultar (tarjetas con nombre y curso). Si tiene uno, entra directo.
+- Opciones: "Datos del estudiante", "Citaciones", "Acuerdos" **[A validar]**, "Solicitar documento" y "Mis solicitudes" (con su estado).
+- Lenguaje aún más simple que el del equipo directivo, sin términos internos (por ejemplo, "folio" o "bitácora").
+- Mensualidades: no se diseñan hasta que la directora confirme el alcance **[A validar]**.
 
 ## 5. Pantallas
 
@@ -123,6 +134,7 @@ Un usuario con varios roles ve la suma de las opciones de todos ellos, en un sol
 - Campos: correo y contraseña. Botón "Iniciar sesión".
 - Error genérico: "Correo o contraseña incorrectos" (no revela cuál de los dos falló).
 - Usuario desactivado: "Tu cuenta está desactivada. Contacta a Administración."
+- Usuario nuevo pendiente de aprobación de un rol delicado: "Su cuenta está pendiente de aprobación por Dirección."
 
 ### 5.2 Inicio (panel)
 Tarjetas según el rol:
@@ -164,9 +176,10 @@ Tarjetas según el rol:
 | **Acuerdos** (HU-05) | Franja roja "CONFIDENCIAL" arriba de la pantalla. Búsqueda por nombre o RUN del estudiante. Ámbito y fecha de firma. |
 | **Reuniones comunales** (HU-06) | Tipo de red, fecha y documento. Lista de compromisos con fecha límite y estado; los vencidos en rojo y los que vencen en menos de 7 días en dorado (plazo propuesto por el equipo). |
 | **Buscador** (HU-07) | Barra de texto + filtros: tipo, rango de fechas, rol emisor, estado, remitente y estudiante. Resultados de todos los tipos en una sola tabla con una insignia del tipo. Solo muestra lo que el usuario puede abrir. |
-| **Bitácora** (HU-08) | Tabla de solo lectura: fecha y hora, usuario, acción y documento. Filtros por usuario, acción y fechas. Para Administración, los documentos confidenciales aparecen como "Documento confidencial #ID", sin título, porque el título puede incluir el nombre de un estudiante **[A validar]**. |
+| **Bitácora** (HU-08) | Tabla de solo lectura: fecha y hora, usuario, acción y documento. Filtros por usuario, acción y fechas. Para Administración, los documentos confidenciales aparecen como "Documento confidencial #ID", sin título, porque el título puede incluir el nombre de un estudiante **[A validar]**. Los registros de gestión de roles (quién creó, modificó, asignó, retiró, solicitó o aprobó un rol) solo aparecen para Dirección. |
 | **Papelera** (HU-08) | Documentos eliminados, quién y cuándo los eliminó. Botón "Restaurar" con confirmación. Administración puede restaurar los confidenciales, pero no abrirlos ni descargarlos; se muestran igual que en la bitácora **[A validar]**. |
-| **Usuarios** (HU-01) | Tabla de usuarios con sus roles y estado. Formulario de alta y edición, con casillas para asignar uno o más roles (al menos uno es obligatorio; si falta, se muestra "Seleccione al menos un rol."). Botón "Activar/Desactivar" (no se borran usuarios). Cuando Administración asigna o retira un rol, la pantalla muestra "Solicitud enviada a Dirección" y el rol aparece como "Pendiente de aprobación". |
+| **Usuarios** (HU-01) | Tabla de usuarios con sus roles y estado. Formulario de alta y edición, con casillas para asignar uno o más roles (al menos uno es obligatorio; si falta, se muestra "Seleccione al menos un rol."). Botón "Activar/Desactivar" (no se borran usuarios). Si Administración asigna o retira un rol no delicado, el cambio se aplica de inmediato. Si el rol es delicado, la pantalla muestra "Solicitud enviada a Dirección" y el rol aparece como "Pendiente de aprobación". Los roles delicados se identifican con una marca visible. |
+| **Roles** (HU-01, solo Dirección) | Lista de roles con su marca de delicado. Formulario para crear o modificar un rol: nombre, casillas de permisos agrupadas por módulo y casilla "Rol delicado". Si el rol incluye un permiso sensible, la casilla aparece marcada y bloqueada, con el texto "Este rol es delicado porque incluye permisos sensibles". |
 | **Solicitudes de rol** (HU-01, solo Dirección) | Aviso con el número de solicitudes pendientes en la barra superior y en el panel de inicio, y una lista con usuario, rol, acción y quién solicita, con botones "Aprobar" y "Rechazar" (con confirmación). Debe resolverse en pocos clics **[Diseño detallado pendiente]**. |
 
 ## 6. Componentes reutilizables (Blade)

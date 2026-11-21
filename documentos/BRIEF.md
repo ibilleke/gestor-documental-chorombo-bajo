@@ -55,19 +55,21 @@ Problemas detectados:
 
 ## 4. Objetivo
 
-Desarrollar una plataforma web que centralice la documentación del equipo directivo, permitiendo **cargar, clasificar, buscar y auditar** documentos según el rol de cada integrante, protegiendo la información sensible y sin costos de licencias.
+Desarrollar una plataforma web que centralice la documentación del equipo directivo, permitiendo **cargar, clasificar, buscar y auditar** documentos según el rol de cada integrante, protegiendo la información sensible y sin costos de licencias. De forma acotada, la plataforma también da acceso a docentes y a apoderados, quienes consultan solo la información de sus propios pupilos (HU-09).
 
 ## 5. Usuarios y roles (RBAC)
 
 | Rol | Responsabilidad | Permisos principales |
 |---|---|---|
-| **Dirección** | Supervisión transversal y aprobación institucional (directora y subdirector) | Carga, lectura, descarga, aprobación y supervisión de **todos** los módulos. Aprueba/rechaza permisos administrativos. **Asigna y retira roles** y aprueba o rechaza las solicitudes de asignación. |
-| **Administración** | Gestión operativa y técnica de la plataforma | Crea, edita y desactiva usuarios y **solicita** la asignación o el retiro de roles (requiere aprobación de Dirección), configuración, respaldos, papelera/auditoría. Gestiona permisos administrativos. |
+| **Dirección** | Supervisión transversal y aprobación institucional (directora y subdirector) | Carga, lectura, descarga, aprobación y supervisión de **todos** los módulos. Aprueba/rechaza permisos administrativos. **Crea y configura roles**, asigna y retira cualquier rol, y aprueba o rechaza las solicitudes de roles delicados. |
+| **Administración** | Gestión operativa y técnica de la plataforma | Crea, edita y desactiva usuarios. Asigna directamente los roles **no delicados** (por ejemplo, Docente y Apoderado) y **solicita** los delicados, que requieren aprobación de Dirección. Configuración, respaldos, papelera/auditoría. Gestiona permisos administrativos. |
 | **Secretaría** | Correspondencia oficial y citaciones | Carga, edición y foliación de memos, oficios y citaciones. |
 | **Jefatura de UTP** | Gestión técnico-pedagógica | Documentos pedagógicos, reuniones comunales técnicas, memos/oficios generales. |
 | **Convivencia Escolar** | Casos de convivencia y apoderados | Carga y lectura de acuerdos con apoderados, citaciones y casos de convivencia (confidencial). |
+| **Docente** (rol no delicado) | Profesores que no integran el equipo directivo | Por definir con la directora **[A validar]**. Mientras tanto, el rol existe sin permisos. |
+| **Apoderado** (rol no delicado) | Padres, madres o tutores | Solo consulta datos de **sus propios pupilos** (portal de apoderados, HU-09). |
 
-Fuera del alcance como usuarios: apoderados, estudiantes y docentes que no integran el equipo directivo.
+Cambio de alcance (21-11-2026): docentes y apoderados pasan a ser usuarios de la plataforma (antes estaban fuera). Los estudiantes siguen fuera del alcance como usuarios.
 
 **Modelo de control de acceso (decidido el 21-11-2026):**
 - **Un usuario puede tener uno o más roles**, porque en una escuela pequeña es probable que una misma persona cumpla varias funciones (por ejemplo, UTP y Convivencia). Sus permisos son la **suma** de los permisos de todos sus roles.
@@ -75,15 +77,20 @@ Fuera del alcance como usuarios: apoderados, estudiantes y docentes que no integ
 - Además del rol, las Policies revisan condiciones del documento: confidencialidad, autor y eliminación.
 - Se niega todo acceso que no esté autorizado de forma explícita; ningún rol tiene acceso total por excepción.
 - Se implementa con funciones nativas de Laravel (Gates, Policies, Eloquent), sin paquetes externos.
-- **Asignación de roles con aprobación de Dirección (decidido el 21-11-2026)**, para evitar que alguien se otorgue accesos a sí mismo:
-  - El subdirector recibe el rol **Dirección**, con los mismos permisos que la directora (incluido el acceso a documentos confidenciales).
-  - Solo quien tiene el permiso `roles.asignar` (Dirección) asigna o retira roles de forma directa.
-  - Quien tiene el permiso `roles.solicitar` (Administración y, si se define, otra persona con rango, como Recursos Humanos **[A validar]**) solo puede **solicitar** una asignación o un retiro. El cambio se aplica cuando Dirección lo aprueba.
-  - Nadie aprueba su propia solicitud, ni una solicitud que lo beneficie a sí mismo.
-  - Un usuario creado por Administración queda **inactivo** hasta que Dirección apruebe su primer rol, y no puede activarse antes; así se cumple que todo usuario activo tenga al menos un rol.
+- **Roles configurables (decidido el 21-11-2026):** los roles base (los de la tabla anterior) se cargan al instalar la plataforma. Solo Dirección (permiso `roles.configurar`) puede crear roles, modificarlos, elegir sus permisos y marcarlos como **delicados**.
+- **Roles delicados, clasificación híbrida:** algunos permisos están marcados como **sensibles** (por ejemplo, ver documentos confidenciales, configurar o asignar roles, ver la bitácora o aprobar permisos administrativos). Un rol con al menos un permiso sensible es delicado siempre, sin que nadie pueda desmarcarlo. Además, Dirección puede marcar como delicado cualquier otro rol. Con los roles base, son delicados Dirección, Administración y Convivencia Escolar.
+- **Asignación de roles (decidido el 21-11-2026):**
+  - El subdirector recibe el rol **Dirección**, con los mismos permisos que la directora (incluido el acceso a documentos confidenciales). Quien tiene el rol Dirección puede asignar y configurar roles sin aprobación.
+  - Permisos de asignación: `roles.asignar` (cualquier rol, sin aprobación; solo Dirección), `roles.asignar_no_delicados` (Administración) y `roles.solicitar` (Administración). Los tres son permisos sensibles.
+  - **Roles no delicados** (por ejemplo, Docente y Apoderado): Administración los asigna y retira directamente, sin aprobación.
+  - **Roles delicados:** Administración (permiso `roles.solicitar` y, si se define, otra persona con rango, como Recursos Humanos **[A validar]**) solo puede **solicitarlos**. El cambio se aplica cuando Dirección lo aprueba.
+  - Todo cambio en los **propios roles** de quien no es Dirección requiere la aprobación de Dirección, aunque el rol no sea delicado. Nadie aprueba su propia solicitud.
+  - Un usuario nuevo con un rol delicado queda **inactivo** hasta que Dirección lo apruebe, y no puede activarse antes. Con un rol no delicado queda activo de inmediato.
   - No se puede retirar el rol Dirección ni desactivar al último usuario activo con ese rol, para que la plataforma nunca quede sin nadie que apruebe.
-  - Cada solicitud, aprobación, rechazo, asignación y retiro de rol queda en la bitácora.
+  - **Registro reservado:** cada creación o modificación de rol, solicitud, aprobación, rechazo, asignación y retiro queda en la bitácora con quién lo hizo y cuándo. Estos registros **solo los ve Dirección**; Administración no los ve, aunque tenga acceso al resto de la bitácora.
   - La aprobación debe ser rápida y simple para Dirección (aviso de pendientes y botones Aprobar/Rechazar), sin perder seguridad. Su diseño detallado se define más adelante (DESIGN §5).
+- **Acceso de apoderados:** además del rol, las Policies verifican el vínculo entre el apoderado y el estudiante. Un apoderado ve **únicamente** a los estudiantes registrados como sus pupilos. Cada estudiante tiene un apoderado, y un apoderado puede tener varios pupilos, a quienes ve en la misma cuenta.
+- **Vínculo entre cuenta y apoderado:** el rol Apoderado es no delicado, pero vincular una cuenta con un apoderado da acceso a datos de menores. Por eso cada vínculo, y cada cambio de apoderado de un estudiante, queda en la bitácora reservada a Dirección, y nadie puede vincular su propia cuenta como apoderado. Si se exigirá aprobación de Dirección para estos vínculos está por definir **[A validar]**.
 
 Nota: los "documentos pedagógicos" de UTP y los "casos de convivencia" vienen de la ficha, pero no están entre los 6 tipos de documento del alcance. Si se incluyen, falta definirlo **[A validar]** (relacionado con la pregunta 4 de la sección 15).
 
@@ -100,6 +107,8 @@ Es una propuesta del equipo (Avance 1, probada en la simulación), no una defini
 | Secretaría | Memos, oficios, citaciones y permisos | Memos, oficios, citaciones y reuniones comunales |
 | Jefatura de UTP | Reuniones comunales y permisos | Memos, oficios y reuniones comunales |
 | Convivencia Escolar | Citaciones, acuerdos y permisos | Citaciones, acuerdos (confidenciales) y reuniones comunales |
+| Docente | Por definir **[A validar]** | Por definir **[A validar]** |
+| Apoderado | Solo solicitudes de documentos | Solo datos, citaciones y acuerdos **[A validar]** de sus propios pupilos (HU-09) |
 
 Supuestos de esta matriz que hay que confirmar:
 - Dirección otorga el V°B° de los permisos; Administración los registra y controla.
@@ -110,14 +119,16 @@ Supuestos de esta matriz que hay que confirmar:
 ## 6. Alcance
 
 ### Incluye (primera versión)
-- Autenticación y control de acceso por los 5 roles.
+- Autenticación y control de acceso por roles configurables (5 roles del equipo directivo, más Docente y Apoderado).
+- Portal de apoderados (HU-09), al final de la Fase 4; si falta tiempo, pasa a una segunda versión.
 - Carga, registro, clasificación, consulta y descarga de **6 tipos de documento**:
   memos, oficios, citaciones, acuerdos con apoderados, documentos de reuniones comunales y permisos administrativos.
 - Buscador con filtros.
 - Bitácora de auditoría y papelera de documentos eliminados.
 
 ### No incluye (por ahora)
-- Acceso para apoderados, estudiantes o docentes.
+- Acceso para estudiantes.
+- Pagos o mensualidades: en evaluación **[A validar]** (ver HU-09).
 - Firma electrónica avanzada.
 - Integración con sistemas del Mineduc u otras plataformas.
 - Registro de asistencia / paso de lista **[A validar con la directora]**.
@@ -136,15 +147,17 @@ La prioridad viene de la matriz de necesidades del Avance 1, actualizada despué
 | 5 | Acuerdos con apoderados / Convivencia | Actas confidenciales (Convivencia y Dirección) | HU-05 | **Alta (prioridad de la directora)** |
 | 6 | Reuniones comunales | Minutas y orientaciones por tipo de red, con compromisos y plazos | HU-06 | Por determinar (la directora prioriza los procesos internos) |
 | 7 | Búsqueda y auditoría | Filtros multinivel y bitácora de quién hizo qué y cuándo | HU-07, HU-08 | Búsqueda: Alta · Bitácora: por determinar |
+| 8 | Portal de apoderados | Cada apoderado consulta la información de sus propios pupilos y solicita documentos | HU-09 | Media (al final de la Fase 4; agregado el 21-11-2026) |
 
 ### Detalle de criterios por HU
 
 **HU-01 — Perfiles y permisos**
-- Crear usuarios y asignarles uno o más de los 5 roles.
+- Crear usuarios y asignarles uno o más roles (los 7 roles base o los que cree Dirección).
 - Un usuario con varios roles accede a la suma de los módulos y acciones de sus roles.
 - Un usuario desactivado no puede iniciar sesión.
 - Todo usuario debe tener al menos un rol: el formulario de alta y edición no se guarda sin un rol seleccionado (decidido el 21-11-2026).
-- Dirección asigna y retira roles directamente; Administración solo los solicita y el cambio se aplica cuando Dirección lo aprueba (ver §5).
+- Dirección crea y configura roles, y asigna o retira cualquier rol directamente. Administración asigna directamente los roles no delicados y solicita los delicados, que se aplican cuando Dirección los aprueba (ver §5).
+- Los registros de gestión de roles solo los ve Dirección.
 - Permisos según la tabla de la sección 5.
 
 **HU-02 — Memos y oficios**
@@ -188,15 +201,26 @@ La prioridad viene de la matriz de necesidades del Avance 1, actualizada despué
 
 **HU-08 — Bitácora**
 - Registro automático de: usuario, acción (subir, editar, descargar, eliminar), documento y fecha/hora. El diagrama de flujo agrega también los accesos denegados.
-- Pueden ver la bitácora: Administración y Dirección. Para Administración, los documentos confidenciales aparecen sin título (propuesta del equipo, ver DESIGN §5.6) **[A validar]**.
+- Pueden ver la bitácora: Administración y Dirección. Para Administración, los documentos confidenciales aparecen sin título (propuesta del equipo, ver DESIGN §5.6) **[A validar]**. Los registros de gestión de roles solo los ve Dirección (§5).
 - Eliminación con confirmación; los documentos van a una **papelera** (borrado lógico) accesible solo por Administración.
 - Entrevista: se identificó la necesidad de **recuperar documentos eliminados por error**, así que la papelera debe permitir restaurarlos. La restauración también queda en la bitácora (propuesta del equipo).
+
+**HU-09 — Portal de apoderados** (agregada el 21-11-2026; falta validarla con la directora **[A validar]**)
+- **Posible duplicación con Lirmi Familia:** la escuela ya usa Lirmi Familia (matrícula, calificaciones y accidentes escolares; ver DESIGN §1), que tiene un portal para apoderados. Hay que confirmar con la directora qué cubre ya Lirmi y qué aportaría este portal, para no duplicar funciones ni datos **[A validar]**.
+- El apoderado inicia sesión y ve solo a sus pupilos. Si tiene varios, elige a cuál consultar.
+- Por cada pupilo puede ver:
+  - **Datos del estudiante:** nombre, curso y datos de contacto registrados.
+  - **Citaciones:** fecha, motivo y estado.
+  - **Acuerdos firmados:** solo los acuerdos de su pupilo. Hoy son confidenciales (Dirección y Convivencia), así que esta excepción debe confirmarse con Convivencia Escolar **[A validar]**.
+- **Solicitar un documento adicional** (por ejemplo, un certificado): la solicitud queda con estado `Pendiente`, `En proceso`, `Entregada` o `Rechazada`, y el apoderado ve en qué estado va. Qué documentos se pueden solicitar y quién los atiende está por definir **[A validar]**.
+- **Mensualidades y pagos [A validar]:** la escuela es municipal y en Chile la educación municipal es gratuita, por lo que normalmente no cobra mensualidades. Hay que confirmar con la directora a qué se refiere (por ejemplo, cuotas voluntarias del Centro de Padres). Además, un módulo de pagos va más allá de la gestión documental y requiere tratar datos financieros. No se diseña hasta tener esa respuesta.
+- Un apoderado nunca ve datos de otros estudiantes, ni por el menú ni escribiendo la URL. Todo acceso a datos de un pupilo queda en la bitácora.
 
 ## 8. Reglas de negocio clave
 
 1. **Archivos permitidos**: PDF o Word (`.pdf`, `.doc`, `.docx`), máximo **15 MB**. Conflicto con HU-06, que menciona "presentaciones": definir si se aceptan `.ppt`/`.pptx` **[A validar]**.
 2. **Folio único** por clase (memo/oficio), folio y año escolar.
-3. **Confidencialidad**: los acuerdos con apoderados (y, si se incorporan, los expedientes de Convivencia) solo son visibles para Dirección y Convivencia Escolar. Las citaciones no son confidenciales: también las ve Secretaría, según la matriz de la sección 5. Los criterios para guardar la documentación reservada siguen pendientes **[A validar]**.
+3. **Confidencialidad**: los acuerdos con apoderados (y, si se incorporan, los expedientes de Convivencia) solo son visibles para Dirección y Convivencia Escolar, con una excepción propuesta: el apoderado ve los acuerdos de su propio pupilo (HU-09) **[A validar]**. Las citaciones no son confidenciales: también las ve Secretaría, según la matriz de la sección 5. Los criterios para guardar la documentación reservada siguen pendientes **[A validar]**.
 4. **Permiso administrativo aprobado** suma días al acumulado anual del funcionario; uno rechazado no.
 5. **Toda acción** sobre un documento queda en bitácora, incluidos los intentos de acceso denegado.
 6. **Borrado lógico** (`eliminado_en`); no se eliminan archivos físicamente desde la interfaz de usuario. Puede eliminar quien cargó el documento o Dirección (supuesto) **[A validar]**.
@@ -216,19 +240,20 @@ Entidades del MER (`mer.html`, carpeta `Evidencias técnicas/`, fuera del reposi
 
 | Entidad | Propósito |
 |---|---|
-| `roles` | Los 5 roles del sistema (nombres editables) |
-| `permisos` | Acciones con nombre, por ejemplo `correspondencia.crear` |
+| `roles` | Roles del sistema: los 7 roles base (5 del equipo directivo, Docente y Apoderado) y los que cree Dirección. Nombre editable y marca `delicado` |
+| `permisos` | Acciones con nombre, por ejemplo `correspondencia.crear`, con la marca `sensible` (un rol con un permiso sensible es delicado) |
 | `permiso_rol` | Permisos asignados a cada rol (muchos a muchos) |
-| `users` | Integrantes del equipo directivo (email único, contraseña hasheada, activo). Decidido el 21-11-2026: se usa la tabla `users` de Laravel en lugar de `usuarios` del MER (ver PLAN §5) |
+| `users` | Usuarios de la plataforma: equipo directivo, docentes y apoderados (email único, contraseña hasheada, activo). Decidido el 21-11-2026: se usa la tabla `users` de Laravel en lugar de `usuarios` del MER (ver PLAN §5) |
 | `rol_user` | Roles asignados a cada usuario (muchos a muchos: un usuario puede tener varios roles) |
 | `solicitudes_rol` | Solicitudes de asignación o retiro de rol: usuario afectado, rol, acción, quién solicita, estado (`Pendiente`, `Aprobada`, `Rechazada`), quién resuelve y fechas |
 | `documentos` | Tabla base: tipo, título, fecha, ruta del archivo, tamaño, confidencial, usuario que lo registró, rol emisor, eliminado_en |
-| `bitacoras` | Usuario, acción, fecha/hora y el registro afectado: un documento o, en la gestión de usuarios y roles, el usuario y el rol involucrados (por eso el documento es opcional) |
+| `bitacoras` | Usuario, acción, fecha/hora y el registro afectado: un documento; en la gestión de usuarios y roles, el usuario y el rol involucrados; en el portal de apoderados, el estudiante consultado (por eso el documento es opcional). Marca de registro reservado (solo visible para Dirección) |
 | `correspondencias` | Detalle de memo/oficio (1:1 con documento). Único: clase + folio + año escolar |
 | `funcionarios` | Personal que solicita permisos (RUN único) |
 | `permisos_administrativos` | Funcionario, fechas, días, estado |
 | `estudiantes` | RUN único, nombre, curso, apoderado |
-| `apoderados` | RUN único, nombre, teléfono |
+| `apoderados` | RUN único, nombre, teléfono y la cuenta de usuario con que entra al portal (opcional: un apoderado puede no tener cuenta) |
+| `solicitudes_documento` | Solicitudes de documentos de un apoderado: apoderado, estudiante, tipo de documento, estado (`Pendiente`, `En proceso`, `Entregada`, `Rechazada`), quién la atiende y fechas (HU-09) |
 | `citaciones` | Documento, estudiante, usuario que cita, fecha/hora, motivo, estado |
 | `acuerdos_apoderados` | Documento, estudiante, ámbito, fecha de firma |
 | `reuniones_comunales` | Documento, tipo de red, fecha |
@@ -267,7 +292,7 @@ Pendiente de definir **[A validar]**: hosting (servidor de la Corporación Munic
 
 Las metas numéricas son una propuesta del equipo y se ajustarán con la directora a partir de una línea base real.
 
-- [ ] Los 5 roles inician sesión y solo ven los módulos que les corresponden.
+- [ ] Todos los roles inician sesión y solo ven los módulos que les corresponden; un apoderado solo ve a sus propios pupilos.
 - [ ] Los 6 tipos de documento se pueden cargar, clasificar y descargar.
 - [ ] Un documento se encuentra con el buscador en menos de 1 minuto.
 - [ ] El sistema impide repetir un folio dentro del mismo año escolar.
@@ -295,22 +320,29 @@ Ya respondidas en la entrevista: cómo se guardan hoy los documentos (archivador
 3. ¿Cómo funciona la reserva de números de oficio?
 4. Convivencia Escolar: ¿qué contienen los expedientes, entrevistas y protocolos, quién los consulta y basta HU-05 para cubrirlos?
 5. ¿Quién puede eliminar documentos?
+6. Docentes y apoderados como usuarios (cambio de alcance del 21-11-2026):
+   - ¿Qué puede ver y hacer un docente en la plataforma?
+   - ¿Qué ofrece hoy Lirmi Familia a los apoderados? ¿El portal de esta plataforma lo complementa o lo duplica?
+   - ¿El apoderado puede ver los acuerdos firmados de su pupilo? (Confirmar también con Convivencia Escolar.)
+   - ¿Qué documentos puede solicitar un apoderado y quién atiende esas solicitudes?
+   - ¿A qué se refieren las "mensualidades"? La escuela es municipal y gratuita: ¿se trata de cuotas del Centro de Padres u otro cobro?
+   - ¿Cómo se entregan las cuentas a los apoderados (por ejemplo, con un correo electrónico)? ¿Todos tienen correo y acceso a internet?
 
 **Otras:**
 
-6. ¿Cuántos memos, oficios y citaciones se generan al mes?
-7. ¿Qué equipos computacionales y conexión a internet hay disponibles?
-8. ¿Dónde se alojará la plataforma (servidor de la Corporación Municipal u otro)?
-9. ¿El paso de lista debe incluirse en la plataforma?
-10. ¿UTP debe ver acuerdos con apoderados cuando son de carácter pedagógico?
-11. ¿Cuántos funcionarios hay (docentes y asistentes) para el módulo de permisos?
-12. ¿Cuántos días de permiso administrativo corresponden por funcionario al año?
-13. ¿Se deben aceptar presentaciones (`.ppt`/`.pptx`) en reuniones comunales, o solo PDF y Word?
-14. ¿Quién mantiene el listado de funcionarios, estudiantes y apoderados en la plataforma?
-15. ¿Las ocho historias de usuario y su prioridad están aprobadas?
-16. Citaciones: ¿solo se almacenan o también se emiten y se les hace seguimiento?
-17. ¿La matrícula oficial es de 208 o 209 estudiantes?
-18. ¿Hay escáner disponible para digitalizar documentos en papel? ¿Se cargarán documentos de años anteriores?
+7. ¿Cuántos memos, oficios y citaciones se generan al mes?
+8. ¿Qué equipos computacionales y conexión a internet hay disponibles?
+9. ¿Dónde se alojará la plataforma (servidor de la Corporación Municipal u otro)?
+10. ¿El paso de lista debe incluirse en la plataforma?
+11. ¿UTP debe ver acuerdos con apoderados cuando son de carácter pedagógico?
+12. ¿Cuántos funcionarios hay (docentes y asistentes) para el módulo de permisos?
+13. ¿Cuántos días de permiso administrativo corresponden por funcionario al año?
+14. ¿Se deben aceptar presentaciones (`.ppt`/`.pptx`) en reuniones comunales, o solo PDF y Word?
+15. ¿Quién mantiene el listado de funcionarios, estudiantes y apoderados en la plataforma?
+16. ¿Las nueve historias de usuario y su prioridad están aprobadas (HU-09, portal de apoderados, se agregó el 21-11-2026)?
+17. Citaciones: ¿solo se almacenan o también se emiten y se les hace seguimiento?
+18. ¿La matrícula oficial es de 208 o 209 estudiantes?
+19. ¿Hay escáner disponible para digitalizar documentos en papel? ¿Se cargarán documentos de años anteriores?
 
 ## 16. Próximos pasos
 

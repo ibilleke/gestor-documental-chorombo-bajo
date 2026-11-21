@@ -13,10 +13,10 @@
 |---|---|---|
 | Entregable N°1 — Diagnóstico | Problemáticas, ficha de requerimientos, MER, flujo, simulación | Entregado (01-11-2026) |
 | H1 — Entorno listo | Proyecto Laravel funcionando con MySQL y Git | Fin semana 1 |
-| H2 — Base del sistema | Inicio de sesión, 5 roles, base de datos completa, datos de prueba | Fin semana 2 |
+| H2 — Base del sistema | Inicio de sesión, roles configurables (7 roles base), base de datos completa, datos de prueba | Fin semana 2 |
 | Entregable N°2 — Diseño de solución | Análisis de soluciones + diseño validado + evidencia de la base funcionando | **[A definir]** (propuesto: fin semana 3) |
 | H3 — Núcleo documental | Carga, descarga protegida, bitácora y papelera funcionando | Fin semana 3 |
-| H4 — Módulos completos | HU-02 a HU-06 implementadas | Fin semana 6 |
+| H4 — Módulos completos | HU-02 a HU-06 implementadas, y HU-09 si alcanza el tiempo | Fin semana 6 |
 | H5 — Búsqueda y auditoría | HU-07 y HU-08 implementadas | Fin semana 7 |
 | H6 — Validación | Pruebas automáticas + prueba de usabilidad con la directora y los futuros usuarios | Fin semana 8 |
 | Entregable N°3 — Solución final | Plataforma desplegada, manuales, informe final | **[A definir]** (propuesto: fin semana 9) |
@@ -59,9 +59,9 @@ Toda instalación de esta fase y de las siguientes se rige por `CLAUDE.md`: se c
 
 Ya se hizo una entrevista (resultados en el Avance 1 del 08-11-2026 y en el BRIEF). Falta:
 
-- [ ] Llevar a la reunión del miércoles las preguntas de la sección 15 del BRIEF, empezando por las 5 prioritarias.
+- [ ] Llevar a la reunión del miércoles las preguntas de la sección 15 del BRIEF, empezando por las 6 prioritarias (la 6 trata sobre docentes y apoderados).
 - [ ] **Semana 1 (plazo máximo: fin de la semana 2):** cerrar la correspondencia entre perfiles y cargos reales (Inspectoría General, Coordinación Académica).
-- [ ] Confirmar las 8 HU y su prioridad, y si Convivencia (expedientes y protocolos) necesita historias de usuario nuevas.
+- [ ] Confirmar las 9 HU (incluida HU-09, portal de apoderados) y su prioridad, y si Convivencia (expedientes y protocolos) necesita historias de usuario nuevas.
 - [ ] Completar la línea base: el tiempo de búsqueda ya se tiene (5–10 min); falta el volumen de documentos al mes.
 - [ ] Actualizar el BRIEF con las respuestas y quitar los **[A validar]** resueltos.
 
@@ -69,20 +69,21 @@ Ya se hizo una entrevista (resultados en el Avance 1 del 08-11-2026 y en el BRIE
 
 ### Fase 2 — Base del sistema (semana 2) · HU-01
 
-- [ ] Migraciones en este orden: `roles` → `permisos` → `permiso_rol` → `users` (columna `activo`) → `rol_user` → `solicitudes_rol` → `funcionarios` → `apoderados` → `estudiantes` → `documentos` → `correspondencias` → `permisos_administrativos` → `citaciones` → `acuerdos_apoderados` → `reuniones_comunales` → `compromisos` → `bitacoras`.
+- [ ] Migraciones en este orden: `roles` → `permisos` → `permiso_rol` → `users` (columna `activo`) → `rol_user` → `solicitudes_rol` → `funcionarios` → `apoderados` (con `user_id` opcional) → `estudiantes` → `solicitudes_documento` → `documentos` → `correspondencias` → `permisos_administrativos` → `citaciones` → `acuerdos_apoderados` → `reuniones_comunales` → `compromisos` → `bitacoras`.
 - [ ] Restricción única en `correspondencias`: (`clase`, `folio`, `anio_escolar`).
 - [ ] Modelos Eloquent con sus relaciones según el MER.
-- [ ] Seeders: 5 roles (con nombres editables, porque pueden cambiar a los cargos reales), los permisos de la matriz y su asignación a cada rol, 1 usuario de prueba por rol, 1 usuario de prueba con dos roles y datos **ficticios** de funcionarios, apoderados y estudiantes.
+- [ ] Seeders: 7 roles base (5 del equipo directivo, Docente y Apoderado, con nombres editables, porque pueden cambiar a los cargos reales), los permisos de la matriz con su marca `sensible` y su asignación a cada rol, 1 usuario de prueba por rol, 1 usuario de prueba con dos roles, 1 apoderado de prueba con dos pupilos y datos **ficticios** de funcionarios, apoderados y estudiantes.
 - [ ] Inicio y cierre de sesión, y bloqueo de usuarios inactivos.
 - [ ] Método `User::tienePermiso()` (suma de los permisos de todos los roles del usuario, guardada en caché durante la solicitud), Gates que lo consultan y `Policies` de Laravel por módulo. Las rutas se protegen con el middleware nativo `can`; no se crea un middleware de rol.
 - [ ] Documento `documentos/MATRIZ_PERMISOS.md`: rol × módulo × acción (ver, crear, editar, descargar, eliminar, aprobar), con el nombre de cada permiso en formato `modulo.accion` (por ejemplo, `correspondencia.crear`). Partir de la matriz preliminar del BRIEF §5 (la misma de `simulacion.html`) y ajustarla con las respuestas de la directora.
 - [ ] Gestión de usuarios (Administración y Dirección): crear, editar, activar o desactivar, con uno o más roles (mínimo uno, validado con un Form Request).
-- [ ] Asignación de roles con aprobación (BRIEF §5): Dirección asigna y retira roles directamente; Administración genera una solicitud en `solicitudes_rol` que se aplica solo cuando Dirección la aprueba. Un usuario nuevo creado por Administración queda inactivo hasta esa aprobación y no puede activarse antes. Nadie resuelve su propia solicitud. No se puede retirar el rol Dirección ni desactivar al último usuario activo con ese rol. Todo queda en la bitácora. El diseño de la pantalla de aprobación rápida se define antes de implementarla (DESIGN §5).
+- [ ] Configuración de roles (solo Dirección, permiso `roles.configurar`): crear y modificar roles, elegir sus permisos y marcarlos como delicados. Un rol con un permiso sensible queda marcado como delicado siempre y no se puede desmarcar.
+- [ ] Asignación de roles (BRIEF §5): Dirección asigna y retira cualquier rol directamente. Administración asigna y retira directamente los roles no delicados; para los delicados genera una solicitud en `solicitudes_rol`, que se aplica solo cuando Dirección la aprueba. Todo cambio en los propios roles de quien no es Dirección requiere aprobación. Un usuario nuevo con un rol delicado queda inactivo hasta esa aprobación y no puede activarse antes. Nadie resuelve su propia solicitud. No se puede retirar el rol Dirección ni desactivar al último usuario activo con ese rol. Todo queda en la bitácora, en registros que solo ve Dirección. El diseño de la pantalla de aprobación rápida se define antes de implementarla (DESIGN §5).
 - [ ] Menú y panel de inicio que muestran solo los módulos permitidos para cada rol.
 - [x] Bocetos de las pantallas principales (DESIGN.md §8), elaborados el 18-11-2026 (carpeta `Bocetos/`, fuera del repositorio).
 - [ ] Validar los bocetos con la directora y al menos dos futuros usuarios.
 
-**Criterio de término:** cada uno de los 5 usuarios de prueba entra y ve solo sus módulos; el usuario con dos roles ve la suma de los módulos de ambos; un rol sin permiso que intenta entrar por URL recibe un error 403; un usuario inactivo no puede iniciar sesión; un rol solicitado por Administración no se aplica hasta que Dirección lo aprueba.
+**Criterio de término:** cada uno de los usuarios de prueba entra y ve solo sus módulos; el usuario con dos roles ve la suma de los módulos de ambos; un rol sin permiso que intenta entrar por URL recibe un error 403; un usuario inactivo no puede iniciar sesión; un rol delicado solicitado por Administración no se aplica hasta que Dirección lo aprueba; un rol no delicado asignado por Administración se aplica de inmediato; los registros de gestión de roles solo los ve Dirección.
 
 ### Fase 3 — Núcleo documental (semana 3)
 
@@ -108,12 +109,13 @@ Cada módulo incluye listado, formulario de carga, detalle, edición, descarga y
 | 4 | Permisos administrativos | HU-03 | Alta | Flujo Pendiente de V°B° → Aprobado/Rechazado; quién aprueba **[A validar]**; alerta de pendientes; días usados y **disponibles** por funcionario (incluye medias jornadas) |
 | 5 | Acuerdos con apoderados / Convivencia | HU-05 | **Alta (prioridad de la directora)** | Siempre confidencial; solo Convivencia y Dirección; búsqueda por nombre o RUN; posible ampliación a expedientes y protocolos **[A validar]** |
 | 5 | Citaciones a apoderados | HU-04 | Por determinar | Motivo y estado; adjuntar colilla firmada; cambio de estado con registro en bitácora |
-| 6 | Reuniones comunales | HU-06 | Por determinar | Tipo de red; compromisos con fecha límite y estado; visible para los 5 roles. Si falta tiempo, es el primer candidato a recortar |
+| 6 | Reuniones comunales | HU-06 | Por determinar | Tipo de red; compromisos con fecha límite y estado; visible para los 5 roles del equipo directivo. Si falta tiempo, es candidato a recortar junto con HU-09 |
+| 6 (al final) | Portal de apoderados | HU-09 | Media | El apoderado ve solo a sus pupilos (Policy que verifica el vínculo apoderado ↔ estudiante, también por URL); datos del estudiante, citaciones, acuerdos firmados **[A validar]** y solicitud de documentos con estado. Mensualidades fuera hasta que la directora las confirme **[A validar]**. Revisar antes la posible duplicación con Lirmi Familia. Junto con Reuniones comunales, es el primer candidato a pasar a una segunda versión |
 | 6 | Mantenedores | — | — | Funcionarios, estudiantes y apoderados (quién los administra: **[A validar]**). Hasta la semana 6, los módulos usan los datos ficticios de los seeders |
 
 - [ ] Validar el formato del RUN chileno (dígito verificador) en estudiantes, apoderados y funcionarios.
 
-**Criterio de término:** se cumplen todos los criterios de aceptación de HU-02 a HU-06 del BRIEF.
+**Criterio de término:** se cumplen todos los criterios de aceptación de HU-02 a HU-06 del BRIEF y, si se implementa en esta versión, los de HU-09 (incluida la prueba de que un apoderado no puede ver a un estudiante que no es su pupilo).
 
 ### Fase 5 — Búsqueda y auditoría (semana 7) · HU-07, HU-08
 
@@ -121,7 +123,7 @@ Cada módulo incluye listado, formulario de carga, detalle, edición, descarga y
 - [ ] Búsqueda de texto por título y asunto (cubre la búsqueda "por tema o referencia" que pidió la directora).
 - [ ] Los resultados respetan la matriz de permisos (nadie ve lo que no puede abrir).
 - [ ] Paginación de resultados.
-- [ ] Vista de bitácora para Administración y Dirección, con filtros por usuario, acción y fecha.
+- [ ] Vista de bitácora para Administración y Dirección, con filtros por usuario, acción y fecha. Los registros de gestión de roles solo se muestran a Dirección.
 - [ ] Papelera: listar y restaurar documentos eliminados (solo Administración). La directora pidió poder recuperar documentos eliminados por error. La restauración también queda registrada en la bitácora.
 
 **Criterio de término:** un documento de prueba se encuentra en menos de 1 minuto (hoy toma 5–10) y cada acción realizada aparece en la bitácora.
@@ -134,6 +136,9 @@ Cada módulo incluye listado, formulario de carga, detalle, edición, descarga y
   - Acceso por URL directa sin permiso.
   - Escalamiento de privilegios: un usuario que intenta asignarse roles o permisos que no le corresponden, aplicar un rol sin aprobación de Dirección, aprobar su propia solicitud o activar un usuario sin rol aprobado.
   - Último usuario de Dirección: no se le puede retirar el rol ni desactivar.
+  - Apoderado: no puede ver datos de un estudiante que no es su pupilo, ni por el menú ni por URL.
+  - Administración: no puede asignar un rol delicado sin aprobación, configurar roles, vincular su propia cuenta como apoderado ni ver los registros de gestión de roles.
+  - Configuración de roles: un rol con un permiso sensible no se puede desmarcar como delicado.
   - Usuario desactivado: no inicia sesión.
   - Usuario sin roles: el formulario lo rechaza; si existiera por otra vía (por ejemplo, directo en la base de datos), no accede a ningún módulo.
   - Descarga de archivos ajenos.
@@ -152,7 +157,7 @@ Cada módulo incluye listado, formulario de carga, detalle, edición, descarga y
 - [ ] Definir el hosting con la directora o la Corporación Municipal (bajo costo, con HTTPS).
 - [ ] Desplegar en producción: `.env` de producción, `APP_DEBUG=false` y almacenamiento privado.
 - [ ] Respaldos automáticos de la base de datos y de los archivos, con una prueba de restauración.
-- [ ] Crear los usuarios reales del equipo directivo (las contraseñas las definen ellos).
+- [ ] Crear los usuarios reales del equipo directivo (las contraseñas las definen ellos). Las cuentas de docentes y apoderados se crean según el procedimiento que se defina con la directora (BRIEF §15, pregunta 6).
 - [ ] Entregar:
   - Manual de usuario por rol: breve, con capturas paso a paso y en lenguaje claro.
   - Manual técnico (instalación, respaldo y restauración).
@@ -170,7 +175,7 @@ Cada módulo incluye listado, formulario de carga, detalle, edición, descarga y
 app/
   Models/            Rol, Permiso, User, Documento, Correspondencia, PermisoAdministrativo,
                      Funcionario, Estudiante, Apoderado, Citacion, AcuerdoApoderado,
-                     ReunionComunal, Compromiso, Bitacora
+                     ReunionComunal, Compromiso, Bitacora, SolicitudRol, SolicitudDocumento
   Policies/          Una Policy por módulo (reglas de la matriz de permisos)
   Http/Controllers/  Un controlador por módulo + DescargaController + BuscadorController
   Http/Requests/     Validaciones de formularios (archivo, folio, RUN, fechas)
@@ -208,14 +213,16 @@ Ninguno impide empezar: las Fases 0, 2 y 3 se pueden hacer sin respuestas de la 
 | Alcance de Convivencia (expedientes, protocolos) | HU-05 y posibles HU nuevas | Antes de la semana 5 |
 | Quién puede eliminar documentos | Policy de eliminación | Antes de la semana 3 |
 | ¿Quién, además de Administración, puede solicitar asignaciones de rol (por ejemplo, Recursos Humanos)? | Permiso `roles.solicitar` (HU-01) | Antes de terminar la semana 2 (mientras tanto, solo Administración) |
+| ¿Vincular una cuenta con un apoderado requiere aprobación de Dirección? | Gestión de apoderados (HU-09) | Antes de la semana 6 (mientras tanto, sin aprobación y con registro reservado) |
 | Citaciones: solo almacenar o emitir y hacer seguimiento | Alcance de HU-04 | Antes de la semana 5 |
 | ¿Se aceptan `.ppt`/`.pptx`? | Regla de archivos en HU-06 | Antes de la semana 6 |
 | ¿Quién mantiene funcionarios, estudiantes y apoderados? | Mantenedores y permisos (HU-03 a HU-05) | Antes de la semana 4 |
 | ¿UTP ve acuerdos pedagógicos? | Policy de HU-05 | Antes de la semana 5 |
+| Docentes y apoderados: permisos del docente, qué ve el apoderado, solicitudes de documentos, mensualidades, duplicación con Lirmi Familia y entrega de cuentas (BRIEF §15, pregunta 6) | Rol Docente y HU-09 | Antes de la semana 6 (el rol Docente existe sin permisos mientras tanto) |
 | Días de permiso por funcionario | Resumen de HU-03 | Antes de la semana 4 |
 | ¿Incluir paso de lista? | Alcance (hoy fuera) | Antes de la semana 3 |
 | Tratamiento de "tú" o "usted" en la interfaz (DESIGN §7) | Textos de la plantilla base | Antes de la semana 3 |
-| Escáner disponible, fotos de celular y archivo histórico (BRIEF §15, pregunta 18) | Formatos aceptados y capacitación | Antes de la semana 4 |
+| Escáner disponible, fotos de celular y archivo histórico (BRIEF §15, pregunta 19) | Formatos aceptados y capacitación | Antes de la semana 4 |
 | Hosting y equipos | Fase 7 | Antes de la semana 7 |
 | Línea base: volumen mensual (el tiempo de búsqueda ya se tiene) | Metas de los criterios de éxito | Antes de la semana 8 |
 
@@ -228,6 +235,8 @@ Ninguno impide empezar: las Fases 0, 2 y 3 se pueden hacer sin respuestas de la 
 | Disponibilidad de la directora (solo miércoles) | Validaciones tardías | Preguntas preparadas y priorizadas por lo que bloquean (sección 6) |
 | Sin hosting definido | No se puede entregar en producción | Plantear opciones de bajo costo desde la semana 3; respaldo: demo local |
 | Datos sensibles de menores | Riesgo legal y ético | Solo datos ficticios en desarrollo; archivos privados; pruebas de acceso |
+| Apoderados (usuarios externos) acceden a datos de menores | Exposición de datos de otros estudiantes; mayor exigencia de la Ley 21.719 | Policy que verifica el vínculo apoderado ↔ estudiante; pruebas de acceso por URL; registro de cada consulta en la bitácora; revisión legal en la Fase 6 |
+| El cambio de alcance (docentes y apoderados) no alcanza en 9 semanas | Retrasa los módulos de prioridad alta | HU-09 va al final de la Fase 4 y puede pasar a una segunda versión; el RBAC de la Fase 2 ya deja preparados los roles y el vínculo |
 | Crecimiento del alcance (paso de lista, etc.) | Atraso de módulos | Todo lo nuevo entra como "fuera de alcance" salvo acuerdo explícito |
 | Equipo pequeño y plazos académicos | Módulos incompletos | Orden por prioridad: núcleo, HU-01/02/03 y Convivencia (HU-05) primero; HU-06 es lo primero que se recorta |
 | Los perfiles de la ficha no coinciden con los cargos reales | Rehacer permisos | Roles en tabla editable y permisos centralizados en Policies; cerrar la correspondencia en la semana 1 (plazo máximo: semana 2) |
