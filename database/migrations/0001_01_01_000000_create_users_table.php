@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            // Un usuario inactivo no puede iniciar sesión (HU-01)
+            $table->boolean('activo')->default(true);
             $table->rememberToken();
             $table->timestamps();
         });
