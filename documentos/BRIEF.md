@@ -273,7 +273,7 @@ Entidades del MER (`mer.html`, carpeta `Evidencias técnicas/`, fuera del reposi
 | Almacenamiento de archivos | Sistema de archivos de Laravel (`storage/`, disco privado, sin URLs públicas) |
 | Licencias | Solo herramientas de código abierto (costo $0 en licencias) |
 
-Frontend: Blade (confirmado) + Tailwind CSS (propuesto; se confirma en la Fase 0 según PLAN §5). Gestor de paquetes de JavaScript: pnpm (decidido). El diseño de pantallas y componentes está en [DESIGN.md](DESIGN.md).
+Frontend: Blade (confirmado) + Tailwind CSS 4 (decidido el 21-11-2026, PLAN §5). Gestor de paquetes de JavaScript: pnpm (decidido). El diseño de pantallas y componentes está en [DESIGN.md](DESIGN.md).
 
 Entorno de desarrollo (actualizado el 20-11-2026, PLAN §5): instalación manual de PHP y Composer, sin Herd, con Git 2.56.1; pendientes: MySQL Community Server 8.4 LTS, Node.js LTS y pnpm. Versiones instaladas: **Laravel Framework 13.43.0**, **PHP 8.5.12** y Composer 2.11.2.
 

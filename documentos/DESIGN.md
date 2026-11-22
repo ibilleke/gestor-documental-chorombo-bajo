@@ -2,7 +2,7 @@
 
 > Guía de diseño del frontend: pantallas, navegación, componentes y estilo visual.
 > Se basa en [BRIEF.md](BRIEF.md) (roles, módulos y reglas) y [PLAN.md](PLAN.md) (stack).
-> Tecnología: **Blade** (motor de plantillas de Laravel) + **Tailwind CSS** (propuesto; se confirma en la Fase 0, PLAN §5). No se usan frameworks de JavaScript; solo JavaScript mínimo donde sea necesario (confirmaciones, vista previa del archivo).
+> Tecnología: **Blade** (motor de plantillas de Laravel) + **Tailwind CSS 4** (decidido el 21-11-2026, PLAN §5). No se usan frameworks de JavaScript; solo JavaScript mínimo donde sea necesario (confirmaciones, vista previa del archivo).
 > Lo marcado **[A validar]** debe revisarse con la directora en la prueba de usabilidad.
 
 ---
@@ -58,7 +58,7 @@ Tomados de las evidencias técnicas (MER y diagrama de flujo) para mantener una 
 
 Contraste comprobado con la fórmula WCAG: todas las combinaciones de texto superan 4.5:1 (nivel AA). El dorado `#C9A227` **no** se usa para texto (2.25:1); va solo en bordes e iconos, y el texto usa `#7A5C00` (5.81:1).
 
-Los colores se definen como tema en `tailwind.config` (o en el CSS del tema, según la versión de Tailwind) para no repetir códigos hex en las vistas.
+Los colores se definen como tema con la directiva `@theme` en `resources/css/app.css` (Tailwind 4 no usa `tailwind.config.js`) para no repetir códigos hex en las vistas.
 
 ### Tipografía
 
