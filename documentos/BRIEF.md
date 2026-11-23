@@ -236,7 +236,7 @@ Diagrama completo: `flujo.html` (carpeta `Evidencias técnicas/`, fuera del repo
 
 ## 10. Modelo de datos (preliminar)
 
-Entidades del MER (`mer.html`, carpeta `Evidencias técnicas/`, fuera del repositorio). El MER usa nombres en singular (`DOCUMENTO`, `BITACORA`…); aquí se muestran como tablas en plural, según la convención de Laravel:
+Entidades del MER (`mer-v2.html`, actualizado el 22-11-2026 con `users`, permisos y tablas pivote; el `mer.html` del Avance 1 se conserva como evidencia; ambos en la carpeta `Evidencias técnicas/`, fuera del repositorio). El MER usa nombres en singular (`DOCUMENTO`, `BITACORA`…); aquí se muestran como tablas en plural, según la convención de Laravel:
 
 | Entidad | Propósito |
 |---|---|
@@ -275,7 +275,7 @@ Entidades del MER (`mer.html`, carpeta `Evidencias técnicas/`, fuera del reposi
 
 Frontend: Blade (confirmado) + Tailwind CSS 4 (decidido el 21-11-2026, PLAN §5). Gestor de paquetes de JavaScript: pnpm (decidido). El diseño de pantallas y componentes está en [DESIGN.md](DESIGN.md).
 
-Entorno de desarrollo (actualizado el 20-11-2026, PLAN §5): instalación manual de PHP y Composer, sin Herd, con Git 2.56.1; pendientes: MySQL Community Server 8.4 LTS, Node.js LTS y pnpm. Versiones instaladas: **Laravel Framework 13.43.0**, **PHP 8.5.12** y Composer 2.11.2.
+Entorno de desarrollo (completado el 22-11-2026, PLAN §5): instalación manual de PHP, Composer y MySQL, sin Herd. Versiones instaladas: **Laravel Framework 13.43.0**, **PHP 8.5.12**, Composer 2.11.2, **MySQL Community Server 8.4.13 LTS**, Node.js 26.13.1 LTS, pnpm 12.21.0, Tailwind CSS 4.3.5 y Git 2.56.1. Iconos: Heroicons v2.2.0, copiados como SVG sin instalar paquetes.
 
 Pendiente de definir **[A validar]**: hosting (servidor de la Corporación Municipal u otro), estrategia de respaldos.
 

@@ -67,7 +67,7 @@ Los colores se definen como tema con la directiva `@theme` en `resources/css/app
 
 ### Iconos
 
-- Un set gratuito de iconos SVG (por ejemplo Heroicons, de los creadores de Tailwind) **[A definir en la Fase 0]**. Su instalación requiere aprobación previa, según `CLAUDE.md`.
+- **Heroicons v2.2.0** (licencia MIT), decidido el 22-11-2026 (PLAN §5): los SVG se copian desde [heroicons.com](https://heroicons.com) dentro de un componente Blade propio, solo los que se usen, sin instalar paquetes. Se usa el estilo de contorno (outline, 24 px) y el color se hereda del texto (`currentColor`).
 - Todo icono va acompañado de texto; no se usan iconos solos para acciones importantes.
 
 ### Accesibilidad
@@ -91,9 +91,9 @@ Los colores se definen como tema con la directiva `@theme` en `resources/css/app
 └──────────────┴───────────────────────────────────────────────┘
 ```
 
-- Archivo Blade base: `resources/views/layouts/app.blade.php`.
+- Archivo Blade base: componente `resources/views/components/layouts/app.blade.php`, que se usa como `<x-layouts.app titulo="...">`.
 - En pantallas angostas el menú lateral se oculta tras un botón "Menú".
-- La pantalla de inicio de sesión usa una plantilla aparte, sin menú: `layouts/guest.blade.php`.
+- La pantalla de inicio de sesión usa una plantilla aparte, sin menú: `components/layouts/guest.blade.php` (`<x-layouts.guest>`).
 
 ## 4. Menú por rol
 
